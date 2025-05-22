@@ -1,26 +1,60 @@
 ---
-title: "Final_Project"
+title: "Project Proposal: Sanitation Access and Malaria Rates"
+author: "Hujoe Pandi Selvan, Adrian Hallak, Brandon Powell, Tymon Vu"
 format: html
-editor: visual
 ---
 
-## Quarto
+## Introduction
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+This project explores the potential relationship between **Rural Basic Sanitation Access (%)** and **Malaria Cases per 100,000 population** across countries over time. These two quantitative variables were selected from the Gapminder database due to the plausible connection between public health infrastructure and disease incidence.
 
-## Running Code
+## Data and Variables
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+We retrieved our datasets from [Gapminder.org](https://www.gapminder.org/data/):
 
-```{r}
-1 + 1
-```
+- **Rural Basic Sanitation Access (%):** The percentage of the rural population in each country with access to basic sanitation services (e.g., improved toilets or latrines).
+- **Malaria Cases per 100,000:** The number of reported malaria cases per 100,000 population, collected and compiled by the World Health Organization.
 
-You can add options to executable code like this
+Each dataset includes data by country and year, ranging approximately from 1990 to 2016, though coverage varies by country and indicator.
 
-```{r}
-#| echo: false
-2 * 2
-```
+Original sources for the data are:
+- Sanitation Access: World Bank / WHO/UNICEF Joint Monitoring Programme for Water Supply, Sanitation and Hygiene (JMP)
+- Malaria Cases: World Health Organization (WHO) Global Health Observatory Data Repository
 
-The `echo: false` option disables the printing of code (only output is displayed).
+## Hypothesis
+
+We hypothesize that **higher access to rural basic sanitation is associated with lower malaria incidence**. Specifically, we expect a **moderately strong negative correlation** between the two variables. 
+
+**Rationale:** Access to basic sanitation facilities helps reduce standing water, human exposure to waste, and other factors that contribute to the spread of vector-borne diseases like malaria. Although malaria is primarily spread by *Anopheles* mosquitoes, which breed in stagnant water, improved sanitation infrastructure may be correlated with reduced standing water and improved public health systems more broadly.
+
+According to the Centers for Disease Control and Prevention (CDC), "Poor sanitation can indirectly increase the risk of malaria by creating environments where mosquitoes breed more easily" ([CDC, 2020](https://www.cdc.gov/malaria/about/biology/index.html)).
+
+Thus, we expect that as sanitation access improves, malaria incidence will decline.
+
+## Data Cleaning and Preparation
+
+### Initial Steps
+
+Each dataset was downloaded as a CSV from Gapminder. The original formats had countries as rows and years as columns, which we reshaped into a "long" format to enable merging. We used the `tidyr::pivot_longer()` function in R to convert each dataset to the following structure:
+
+| country | year | sanitation_access |
+|---------|------|-------------------|
+
+| country | year | malaria_cases     |
+|---------|------|-------------------|
+
+### Merging
+
+After reshaping, we joined the two datasets using a left join on `country` and `year`. We removed any observations that had `NA` values in either of the variables to ensure a complete dataset for analysis.
+
+### Cleaning Decisions and Limitations
+
+- **Country Name Matching:** Some country names varied slightly across datasets (e.g., "Côte d'Ivoire" vs "Ivory Coast"), which required standardization using a country name harmonization script.
+- **Year Coverage:** Data availability was not consistent for all countries and years. As a result, our final dataset may be biased toward countries with better data infrastructure.
+- **Missing Values:** We chose to drop rows with missing values rather than impute them, to avoid introducing artificial trends.
+
+## Conclusion
+
+This proposal lays the groundwork for a more detailed analysis of how infrastructure, particularly rural sanitation, relates to malaria incidence globally. By using publicly available Gapminder data and combining two related public health metrics, our study aims to quantify and visualize this relationship.
+
+In the next phase of the project, we plan to use exploratory data analysis and linear regression to evaluate the strength and direction of the association.
