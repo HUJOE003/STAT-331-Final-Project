@@ -16,7 +16,7 @@ execute:
 
 ```{r setup}
 library(tidyverse)
-library(palmerpenguins)
+library(knitr)
 ```
 
 ## Introduction
@@ -53,5 +53,21 @@ Hence we expect to see as sanitation improves malaria cases start to decline.
 ## Data Cleaning and Preparation
 
 ```{r}
+malaria <- read_csv("Data/malaria_cases_per_100000_reported.csv")
+sanit <- read_csv("Data/at_least_basic_sanitation_rural_access_percent.csv")
+```
 
+```{r}
+malaria_clean <- malaria |>
+  pivot_longer(cols = `1990`:`2006` , names_to = "year", values_to = "malaria") 
+
+sanit_clean <- sanit |>
+  pivot_longer(cols = `2000`:`2022` , names_to = "year", values_to = "sanit") 
+
+cleaned <- full_join(malaria_clean, sanit_clean, by = join_by(country, year))
+
+cleaned |>
+  filter(!is.na(malaria) & !is.na(sanit)) |>
+  tail(10)
+  
 ```
