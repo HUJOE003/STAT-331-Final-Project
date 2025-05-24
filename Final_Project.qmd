@@ -59,12 +59,11 @@ sanit <- read_csv("Data/at_least_basic_sanitation_rural_access_percent.csv")
 # Get data from 2000 to 2006
 malaria_clean <- malaria |>
   select(country, "2000", "2001", "2002", "2003", "2004", "2005", "2006") |>
-  pivot_longer(cols = `2000`:`2006` , names_to = "year", values_to = "malaria")
+  pivot_longer(cols = `1990`:`2006` , names_to = "year", values_to = "malaria")
 
 # Get data from 2000 to 2006
 sanit_clean <- sanit |>
-  select(country, "2000", "2001", "2002", "2003", "2004", "2005", "2006") |>
-  pivot_longer(cols = `2000`:`2006` , names_to = "year", values_to = "sanit") 
+  pivot_longer(cols = `2000`:`2020` , names_to = "year", values_to = "sanit") 
 
 cleaned <- full_join(malaria_clean, sanit_clean, by = join_by(country, year))
 
