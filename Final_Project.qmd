@@ -21,32 +21,30 @@ library(knitr)
 
 ## Introduction
 
-We will be exploring the relationship between **Least basic sanitation, rural acecess (%)** and **Malaria Cases per 100,000 population** across countries over time. We chose it from Gapminder database. We will be trying to find plausible connection between public health and  infrastructure.
-
+We will be exploring the relationship between **Least basic sanitation, rural acecess (%)** and **Malaria Cases per 100,000 population** across countries over time. We chose it from Gapminder database. We will be trying to find plausible connection between public health and infrastructure.
 
 ## Data and Variables
 
 We retrieved our datasets from [Gapminder.org](https://www.gapminder.org/data/):
 
--   **Least basic sanitation, rural acecess (%):** The percentage of people using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services. Improved sanitation facilities include flush/pour flush to piped sewer systems, septic tanks or pit latrines; ventilated improved pit latrines, compositing toilets or pit latrines with slabs.
+-   **Least basic sanitation, rural acceess (%):** The percentage of people using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services. Improved sanitation facilities include flush/pour flush to piped sewer systems, septic tanks or pit latrines; ventilated improved pit latrines, compositing toilets or pit latrines with slabs.
 
 -   **Malaria Cases per 100,000:** The number of reported malaria cases per 100,000 population in different years.
 
 Each dataset includes data by country and year, ranging approximately from 1990 to 2006, though coverage varies by country and indicator.
 
-Original sources for the data are: 
+Original sources for the data are:
 
-- Sanitation Access: https://data.worldbank.org/indicator/SH.STA.ACSN.RU 
-- Malaria Cases: https://www.who.int/tb/en/
+-   Sanitation Access: https://data.worldbank.org/indicator/SH.STA.ACSN.RU
+-   Malaria Cases: https://www.who.int/tb/en/
 
 ## Hypothesis
 
-Our hypothesis is that **higher access to rural basic sanitation is associated with lower malaria incidence**. 
-We are expecting a negative corelation between the two chosen variables.
+Our hypothesis is that **higher access to rural basic sanitation is associated with lower malaria incidence**. We are expecting a negative correlation between the two chosen variables.
 
-**Rationale:** People with access to basic sanitation facilities would help reduce standing water, exposure to waste and even other factors that aids in the spread of malaria. 
+**Rationale:** People with access to basic sanitation facilities would help reduce standing water, exposure to waste and even other factors that aids in the spread of malaria.
 
-According to the National Library of Medicine, "Poor sanitation can indirectly increase the risk of malaria by creating environments where mosquitoes breed more easily" ([](https://pmc.ncbi.nlm.nih.gov/articles/PMC9817013/)).
+According to the National Library of Medicine, "Poor sanitation can indirectly increase the risk of malaria by creating environments where mosquitoes breed more easily" ([ ](https://pmc.ncbi.nlm.nih.gov/articles/PMC9817013/)).
 
 Hence we expect to see as sanitation improves malaria cases start to decline.
 
@@ -58,11 +56,15 @@ sanit <- read_csv("Data/at_least_basic_sanitation_rural_access_percent.csv")
 ```
 
 ```{r}
+# Get data from 2000 to 2006
 malaria_clean <- malaria |>
-  pivot_longer(cols = `1990`:`2006` , names_to = "year", values_to = "malaria") 
+  select(country, "2000", "2001", "2002", "2003", "2004", "2005", "2006") |>
+  pivot_longer(cols = `2000`:`2006` , names_to = "year", values_to = "malaria")
 
+# Get data from 2000 to 2006
 sanit_clean <- sanit |>
-  pivot_longer(cols = `2000`:`2022` , names_to = "year", values_to = "sanit") 
+  select(country, "2000", "2001", "2002", "2003", "2004", "2005", "2006") |>
+  pivot_longer(cols = `2000`:`2006` , names_to = "year", values_to = "sanit") 
 
 cleaned <- full_join(malaria_clean, sanit_clean, by = join_by(country, year))
 
