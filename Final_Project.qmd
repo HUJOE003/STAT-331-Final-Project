@@ -84,12 +84,17 @@ cleaned |>
 
 ```{r}
 # Linear Regression
-
 cleaned_count <- cleaned |>
   group_by(country) |>
   summarize(sanit = mean(sanit, na.rm = T),
             malaria = mean(malaria, na.rm = T)) |>
-  ungroup()
+  ungroup() |>
+  filter(!is.na(malaria) & !is.na(sanit))
 
 lm_clean <- lm(sanit ~ malaria, data = cleaned_count)
+
+cleaned_count |>
+  ggplot(aes(x = malaria, y = sanit)) + 
+  geom_jitter() + 
+  geom_smooth(method = "lm")
 ```
