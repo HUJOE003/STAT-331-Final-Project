@@ -83,18 +83,24 @@ cleaned |>
 
 
 ```{r}
-# Linear Regression
 cleaned_count <- cleaned |>
   group_by(country) |>
-  summarize(sanit = mean(sanit, na.rm = T),
-            malaria = mean(malaria, na.rm = T)) |>
+  summarize(sanit = mean(sanit, na.rm = TRUE),
+            malaria = mean(malaria, na.rm = TRUE)) |>
   ungroup() |>
-  filter(!is.na(malaria) & !is.na(sanit))
+  filter(!is.na(malaria) & !is.na(sanit),
+         malaria > 0)  # exclude zero or negative values for log
 
-lm_clean <- lm(sanit ~ malaria, data = cleaned_count)
+# Re-fit linear model with log-transformed malaria
+lm_clean <- lm(sanit ~ log10(malaria), data = cleaned_count)
 
+# Plot with transformed y-axis
 cleaned_count |>
-  ggplot(aes(x = malaria, y = sanit)) + 
+  ggplot(aes(x = sanit, y = malaria)) + 
   geom_jitter() + 
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm", formula = y ~ x) + 
+  scale_y_log10() +  # log-transform the y-axis (malaria)
+  labs(y = "Malaria (log10)", x = "Sanitation (%)",
+       title = "Log-Transformed Linear Relationship: Sanitation vs. Malaria")
+
 ```
