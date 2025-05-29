@@ -82,6 +82,8 @@ cleaned |>
 ```
 
 
+
+## 2.2 Linear Regression
 ```{r}
 cleaned_count <- cleaned |>
   group_by(country) |>
@@ -103,4 +105,12 @@ cleaned_count |>
   labs(y = "Malaria (log10)", x = "Sanitation (%)",
        title = "Log-Transformed Linear Relationship: Sanitation vs. Malaria")
 
+clean_count_lm <- lm(malaria ~ sanit, data = cleaned_count)
+summary(clean_count_lm)
 ```
+```{r}
+library(broom)
+tidy(clean_count_lm)
+```
+
+
