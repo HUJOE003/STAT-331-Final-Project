@@ -107,6 +107,8 @@ cleaned_count |>
        title = "Log-Transformed Linear Relationship: Sanitation vs. Malaria")
 
 ```
+
+# Model Summary Statistics
 ```{r}
 clean_count_lm <- lm(malaria ~ sanit, data = cleaned_count)
 summary(clean_count_lm)
