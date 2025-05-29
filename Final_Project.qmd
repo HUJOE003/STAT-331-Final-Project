@@ -57,18 +57,39 @@ sanit <- read_csv("Data/at_least_basic_sanitation_rural_access_percent.csv")
 
 ```{r}
 # Get data from 2000 to 2006
+years <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006")
+
 malaria_clean <- malaria |>
-  select(country, "2000", "2001", "2002", "2003", "2004", "2005", "2006") |>
-  pivot_longer(cols = `1990`:`2006` , names_to = "year", values_to = "malaria")
+  select(country, years) |>
+  pivot_longer(cols = `2000`:`2006` , names_to = "year", values_to = "malaria") |>
+  mutate(
+    malaria = case_when(
+      str_detect(malaria, "k") ~ as.numeric(str_remove(malaria, "k")) * 1000,
+      TRUE ~ as.numeric(malaria)
+    )
+  )
 
 # Get data from 2000 to 2006
 sanit_clean <- sanit |>
-  pivot_longer(cols = `2000`:`2020` , names_to = "year", values_to = "sanit") 
+  select(country, years) |>
+  pivot_longer(cols = `2000`:`2006` , names_to = "year", values_to = "sanit") 
 
 cleaned <- full_join(malaria_clean, sanit_clean, by = join_by(country, year))
 
 cleaned |>
   filter(!is.na(malaria) & !is.na(sanit)) |>
   tail(10)
-  
+```
+
+
+```{r}
+# Linear Regression
+
+cleaned_count <- cleaned |>
+  group_by(country) |>
+  summarize(sanit = mean(sanit, na.rm = T),
+            malaria = mean(malaria, na.rm = T)) |>
+  ungroup()
+
+lm_clean <- lm(sanit ~ malaria, data = cleaned_count)
 ```
