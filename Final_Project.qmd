@@ -21,17 +21,15 @@ library(knitr)
 
 ## Introduction
 
-We will be exploring the relationship between **Least basic sanitation, rural acecess (%)** and **Malaria Cases per 100,000 population** across countries over time. We chose it from Gapminder database. We will be trying to find plausible connection between public health and infrastructure.
+We will be exploring the relationship between **access to rural basic sanitation** and **Malaria Cases per 100,000 population** across countries over time. We will be trying to find plausible connection between public health and infrastructure.
 
 ## Data and Variables
 
-We retrieved our datasets from [Gapminder.org](https://www.gapminder.org/data/):
+Our datasets came from the Gapminder database, which combines data from multiple sources into one succint time series for multiple countries. Both of these datasets includes data by country and year, ranging approximately from 1990 to 2006, though coverage varies by country and indicator.
 
--   **Least basic sanitation, rural acceess (%):** The percentage of people using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services. Improved sanitation facilities include flush/pour flush to piped sewer systems, septic tanks or pit latrines; ventilated improved pit latrines, compositing toilets or pit latrines with slabs.
+The **access to rural basic sanitation** dataset provides data about the percentage of people living in that country using the most basic sanitation services, that is, improved sanitation facilities not shared with other households. These facilities would  include sewer systems, septic tanks, ventilated improved pit latrines, and compositing toilets. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services.
 
--   **Malaria Cases per 100,000:** The number of reported malaria cases per 100,000 population in different years.
-
-Each dataset includes data by country and year, ranging approximately from 1990 to 2006, though coverage varies by country and indicator.
+The **Malaria Cases per 100,000** dataset provides information about the number of repoted malaria cases per 100,000 people in a country in different years.
 
 Original sources for the data are:
 
@@ -49,6 +47,8 @@ According to the National Library of Medicine, "Poor sanitation can indirectly i
 Hence we expect to see as sanitation improves malaria cases start to decline.
 
 ## Data Cleaning and Preparation
+
+Before analyzing our data, we decided to combine both of our datasets by country with the overlapping years of interest from both datasets. This would only include the years from 2000-2006. We then renamed the columns coming from the malaria dataset to **malaria** and the columns coming from the acess to rural basic sanitation dataest to **sanit** and pivoted the data to long format to fully display and make it easier to manipulate.
 
 ```{r}
 malaria <- read_csv("Data/malaria_cases_per_100000_reported.csv")
