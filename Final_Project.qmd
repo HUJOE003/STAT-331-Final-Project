@@ -19,6 +19,7 @@ library(tidyverse)
 library(knitr)
 library(gganimate)
 library(gifski)
+library(broom)
 ```
 
 ## Introduction
@@ -85,6 +86,29 @@ cleaned |>
 
 ### 2.1 Data Visualization
 
+#### 2.1.1 Relationship Between Variables
+```{r}
+cleaned |>
+  group_by(country) |>
+  summarize(
+    sanit_avg  = mean(sanit,  na.rm = TRUE),
+    malaria_avg = mean(malaria, na.rm = TRUE)
+  ) |>
+  filter(!is.na(sanit_avg) & !is.na(malaria_avg)) |>
+ggplot(aes(x = sanit_avg, y = malaria_avg)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    x = "Average Rural Basic Sanitation (%)",
+    y = "Average Malaria Cases per 100 000",
+    title = "Country-level Sanitation vs. Malaria (2000–2006)"
+  )
+```
+In this plot each point is one country’s 2000–2006 average.  We see a clear downward trend: countries with higher basic sanitation rates tend to have lower malaria incidence.
+
+#### 2.1.2 Animation
+Next we use **gganimate** to show how the same relationship shifts year by year:
+
 ```{r}
 # Animation
 cleaned |> 
@@ -92,9 +116,15 @@ cleaned |>
   ggplot(aes(x = sanit, y = malaria)) +
   geom_point() +
   scale_y_log10(labels = scales::comma) +
+  labs(
+    x = "Rural Basic Sanitation (%)",
+    y = "Malaria Cases per 100 000 (log scale)",
+    title = 'Year: {closest_state}'
+  ) +
   transition_states(year,
                     transition_length = 2,
-                    state_length = 2)
+                    state_length = 2) +
+  ease_aes("linear")
 ```
 
 ### 2.2 Linear Regression
@@ -121,3 +151,37 @@ cleaned_count |>
        title = "Log-Transformed Linear Relationship: Sanitation vs. Malaria")
 
 ```
+Looking at the linear regression graph, we can see that by using a logarithmic transformation, it is much easier to visualize a relationship between Sanitation Percentage and Malaria Cases.
+
+#### Coefficients table of fitted model
+
+```{r}
+tidy(lm_clean) |>
+  knitr::kable(digits = 4,
+    col.names = c("Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  )
+```
+The estimate coefficient of malaria shows a negative correlation between Sanitation Percentage and Malaria Cases.
+
+## 2.3 Model Fit
+
+```{r}
+y <- cleaned_count$malaria
+y_hat <- predict(lm_clean)
+
+
+A <- sum((y - mean(y))^2)         # total variance
+B <- sum((y_hat - mean(y))^2)     # explained variance
+C <- sum((y - y_hat)^2)           # unexplained variance
+
+R2 <- B / A # calc R^2
+
+fit_tbl <- tibble(
+  Quantity = c("Var(Y)", "Var(Ŷ)", "Var(residuals)", "R-squared"),
+  Value    = c(A,      B,       C,           B/A)
+)
+
+fit_tbl |>
+  knitr::kable(digits = c(NA,4))
+```
+With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.  
