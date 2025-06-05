@@ -17,6 +17,8 @@ execute:
 ```{r setup}
 library(tidyverse)
 library(knitr)
+library(gganimate)
+library(gifski)
 library(broom)
 ```
 
@@ -28,7 +30,7 @@ We will be exploring the relationship between **access to rural basic sanitation
 
 Our datasets came from the Gapminder database, which combines data from multiple sources into one succint time series for multiple countries. Both of these datasets includes data by country and year, ranging approximately from 1990 to 2006, though coverage varies by country and indicator.
 
-The **access to rural basic sanitation** dataset provides data about the percentage of people living in that country using the most basic sanitation services, that is, improved sanitation facilities not shared with other households. These facilities would  include sewer systems, septic tanks, ventilated improved pit latrines, and compositing toilets. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services.
+The **access to rural basic sanitation** dataset provides data about the percentage of people living in that country using the most basic sanitation services, that is, improved sanitation facilities not shared with other households. These facilities would include sewer systems, septic tanks, ventilated improved pit latrines, and compositing toilets. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services.
 
 The **Malaria Cases per 100,000** dataset provides information about the number of repoted malaria cases per 100,000 people in a country in different years.
 
@@ -49,7 +51,7 @@ Hence we expect to see as sanitation improves malaria cases start to decline.
 
 ## Data Cleaning and Preparation
 
-Before analyzing our data, we decided to combine both of our datasets by country with the overlapping years of interest from both datasets. This would only include the years from 2000-2006. We then renamed the columns coming from the malaria dataset to **malaria** and the columns coming from the acess to rural basic sanitation dataest to **sanit** and pivoted the data to long format to fully display and make it easier to manipulate.
+Before analyzing our data, we decided to combine both of our datasets by country with the overlapping years of interest from both datasets. This would only include the years from 2000-2006. We then renamed the columns coming from the malaria dataset to **malaria** and the columns coming from the access to rural basic sanitation dataest to **sanit** and pivoted the data to long format to fully display and make it easier to manipulate.
 
 ```{r}
 malaria <- read_csv("Data/malaria_cases_per_100000_reported.csv")
@@ -82,6 +84,50 @@ cleaned |>
   tail(10)
 ```
 
+### 2.1 Data Visualization
+
+#### 2.1.1 Relationship Between Variables
+```{r}
+cleaned |>
+  group_by(country) |>
+  summarize(
+    sanit_avg  = mean(sanit,  na.rm = TRUE),
+    malaria_avg = mean(malaria, na.rm = TRUE)
+  ) |>
+  filter(!is.na(sanit_avg) & !is.na(malaria_avg)) |>
+ggplot(aes(x = sanit_avg, y = malaria_avg)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    x = "Average Rural Basic Sanitation (%)",
+    y = "Average Malaria Cases per 100 000",
+    title = "Country-level Sanitation vs. Malaria (2000–2006)"
+  )
+```
+In this plot each point is one country’s 2000–2006 average.  We see a clear downward trend: countries with higher basic sanitation rates tend to have lower malaria incidence.
+
+#### 2.1.2 Animation
+Next we use **gganimate** to show how the same relationship shifts year by year:
+
+```{r}
+# Animation
+cleaned |> 
+  filter(!is.na(malaria) & !is.na(sanit), malaria > 0) |>
+  ggplot(aes(x = sanit, y = malaria)) +
+  geom_point() +
+  scale_y_log10(labels = scales::comma) +
+  labs(
+    x = "Rural Basic Sanitation (%)",
+    y = "Malaria Cases per 100 000 (log scale)",
+    title = 'Year: {closest_state}'
+  ) +
+  transition_states(year,
+                    transition_length = 2,
+                    state_length = 2) +
+  ease_aes("linear")
+```
+
+### 2.2 Linear Regression
 
 
 ## 2.2 Linear Regression
@@ -99,21 +145,46 @@ lm_clean <- lm(sanit ~ log10(malaria), data = cleaned_count)
 
 # Plot with transformed y-axis
 cleaned_count |>
-  ggplot(aes(x = sanit, y = malaria)) + 
+  ggplot(aes(x = sanit, y = malaria)) +
   geom_jitter() + 
   geom_smooth(method = "lm", formula = y ~ x) + 
-  scale_y_log10() +  # log-transform the y-axis (malaria)
+  scale_y_log10() +
   labs(y = "Malaria (log10)", x = "Sanitation (%)",
        title = "Log-Transformed Linear Relationship: Sanitation vs. Malaria")
 
 ```
 
-# Model Summary Statistics
+Looking at the linear regression graph, we can see that by using a logarithmic transformation, it is much easier to visualize a relationship between Sanitation Percentage and Malaria Cases.
+
+#### Coefficients table of fitted model
+
 ```{r}
-clean_count_lm <- lm(malaria ~ sanit, data = cleaned_count)
-summary(clean_count_lm)
-
-tidy(clean_count_lm)
+tidy(lm_clean) |>
+  knitr::kable(digits = 4,
+    col.names = c("Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  )
 ```
+The estimate coefficient of malaria shows a negative correlation between Sanitation Percentage and Malaria Cases.
+
+## 2.3 Model Fit
+
+```{r}
+y <- cleaned_count$malaria
+y_hat <- predict(lm_clean)
 
 
+A <- sum((y - mean(y))^2)         # total variance
+B <- sum((y_hat - mean(y))^2)     # explained variance
+C <- sum((y - y_hat)^2)           # unexplained variance
+
+R2 <- B / A # calc R^2
+
+fit_tbl <- tibble(
+  Quantity = c("Var(Y)", "Var(Ŷ)", "Var(residuals)", "R-squared"),
+  Value    = c(A,      B,       C,           B/A)
+)
+
+fit_tbl |>
+  knitr::kable(digits = c(NA,4))
+```
+With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.  
