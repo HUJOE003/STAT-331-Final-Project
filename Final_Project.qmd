@@ -194,7 +194,6 @@ With an R^2-value of 0.395, there is a moderate correlation between increases in
 Cross-validation is a technique used to assess how well a predictive model generalizes to an independent dataset. Rather than evaluating the model on a single train/test split, we divide the data into _k_ “folds” and cycle through them so that each fold serves as a validation set exactly once. In this project, we chose the maximum number of folds such that each fold contains at least 10 observations. In practice, our steps were:
 
 1) **Choose the number of folds (_k_)** where N is the total number of observations in cleaned_count. This guarantees each fold has at least 10 observations.
-### 3.2 Discussion of Cross-Validation Results
 
 2) Randomly partition the data into k folds.
 We generated a vector fold_ids of length N, where each element is an integer from 1 to k. Each integer appears approximately the same number of times—meaning each fold will be roughly equal in size.
