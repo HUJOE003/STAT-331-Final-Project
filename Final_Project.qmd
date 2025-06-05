@@ -20,6 +20,7 @@ library(knitr)
 library(gganimate)
 library(gifski)
 library(broom)
+library(kableExtra)
 ```
 
 ## Introduction
@@ -127,10 +128,16 @@ cleaned |>
   ease_aes("linear")
 ```
 
+In this animation plot we see that...
+- The animation illustrates that from 2000 to 2006, the negative correlation between Malaria cases per 100,000 and rural basic sanitation percentage gradually strengthens.
+
+- Despite potential external influences such as malaria outbreaks and natural events, the log relationship between the two variables remains consistently evident throughout the years.
+
+- Over time, a clear trend emerges: Of the countries in our data set, more tend achieve higher levels of rural basic sanitation, accompanied by a modest decline in malaria case rates per 100,000 people.
+
+
 ### 2.2 Linear Regression
 
-
-## 2.2 Linear Regression
 ```{r}
 cleaned_count <- cleaned |>
   group_by(country) |>
@@ -154,17 +161,41 @@ cleaned_count |>
 
 ```
 
-Looking at the linear regression graph, we can see that by using a logarithmic transformation, it is much easier to visualize a relationship between Sanitation Percentage and Malaria Cases.
+- Looking at the graph of linear regression, we can see that a logarithmic transformation of the rate of malaria cases makes the relationship between sanitation percent and the rate easier to interpret and visualize. By applying the log10 scale transformation to the y-axis, we effectively reduce the skewing caused by countries with very high rates of malaria that otherwise distort the trend.
+
+- The plot reveals a negative linear correlation between rural areas with basic sanitation and the logarithm of malaria cases per 100,000. Log-transformed malaria rates decline when sanitation is better, and that suggests that better access to basic sanitation comes along with fewer cases of malaria. The negative correlation is as expected by the hypothesis that improved sanitation reduces exposure to environments relative to mosquito breeding and malaria transmission.
+
 
 #### Coefficients table of fitted model
 
 ```{r}
 tidy(lm_clean) |>
-  knitr::kable(digits = 4,
-    col.names = c("Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  kable(
+    digits = 4,
+    col.names = c("Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)"),
+    caption = "Table 1: Regression Output for log-transformed Malaria Cases vs. Sanitation %",
+    align = "lcccc"
+  ) |>
+  kable_styling(
+    full_width = FALSE,
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    position = "center"
   )
 ```
-The estimate coefficient of malaria shows a negative correlation between Sanitation Percentage and Malaria Cases.
+
+Intercept
+
+- When log10(malaria) is 0, that is also when malaria cases per 100,000 = 1; the model predicts the rural basic sanitation rate to be approximately 78.92%.
+
+- It represents the expected sanitation level in countries with extremely low malaria burden.
+
+Coefficient
+
+- For every 1-unit increase in log10(malaria) or for every 10 unit increase in malaria cases per 100,000 people. The model predicts an average decrease of 14.73 percentage points in the rural sanitation rate.
+
+Significance
+
+- Because the P-value is essentially 0, it shows us that at a 95% significiance level, we are confident that there is a significant relationship between Malaria Cases per 100,000 and Access to rural basic sanitation.
 
 ## 2.3 Model Fit
 
@@ -187,10 +218,7 @@ fit_tbl <- tibble(
 fit_tbl |>
   knitr::kable(digits = c(NA,4))
 ```
-<<<<<<< HEAD
 With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.  
-=======
-With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.
 
 
 ## 3.1 Implement k‐fold cross validation
