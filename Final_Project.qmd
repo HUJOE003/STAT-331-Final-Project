@@ -170,18 +170,167 @@ y <- cleaned_count$malaria
 y_hat <- predict(lm_clean)
 
 
-A <- sum((y - mean(y))^2)         # total variance
-B <- sum((y_hat - mean(y))^2)     # explained variance
-C <- sum((y - y_hat)^2)           # unexplained variance
+A <- sum((y - mean(y))^2) # total variance
+B <- sum((y_hat - mean(y))^2) # explained variance
+C <- sum((y - y_hat)^2) # unexplained variance
 
 R2 <- B / A # calc R^2
 
 fit_tbl <- tibble(
   Quantity = c("Var(Y)", "Var(Ŷ)", "Var(residuals)", "R-squared"),
-  Value    = c(A,      B,       C,           B/A)
+  Value    = c(A, B, C, B/A)
 )
 
 fit_tbl |>
   knitr::kable(digits = c(NA,4))
 ```
-With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.  
+With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.
+
+
+## 3.1 Implement k‐fold cross validation
+
+### Explanation of cross validation:
+
+Cross-validation is a technique used to assess how well a predictive model generalizes to an independent dataset. Rather than evaluating the model on a single train/test split, we divide the data into _k_ “folds” and cycle through them so that each fold serves as a validation set exactly once. In this project, we chose the maximum number of folds such that each fold contains at least 10 observations. In practice, our steps were:
+
+1) **Choose the number of folds (_k_)** where N is the total number of observations in cleaned_count. This guarantees each fold has at least 10 observations.
+### 3.2 Discussion of Cross-Validation Results
+
+2) Randomly partition the data into k folds.
+We generated a vector fold_ids of length N, where each element is an integer from 1 to k. Each integer appears approximately the same number of times—meaning each fold will be roughly equal in size.
+
+3) Loop over each fold (1 through k).
+For each fold index x:
+
+Training set: All rows where fold_ids != x.
+
+Validation set: All rows where fold_ids == x.
+
+- Fit the regression model on the training set. In our case, we predicted rural.
+- sanitation percentage (sanit) as a function of log-transformed malaria cases.
+- Predict sanit for the held-out fold (test_data) using predict(mod, newdata = test_data).
+
+Compute the fold’s R² (validation) as the ratio of “explained variance” to “total variance” of the validation responses.
+
+4) Collect all k R² values.
+We stored each fold’s validation R² in cv_r2_vec, then combined them into a tibble.
+
+At the end, cv_results contains one R² value per fold, and avg_r2 is the average cross-validated R² across all folds.
+
+```{r}
+set.seed(2025)
+
+N  <- nrow(cleaned_count)
+k  <- floor(N / 10)
+if(k < 2) stop("Too few observations to form even 2 folds with ≥10 obs each.")
+
+fold_ids <- sample(rep(1:k, length.out = N))
+```
+
+
+```{r}
+
+cv_r2_vec <- map_dbl(1:k, function(x) {
+
+  train_data <- cleaned_count[fold_ids != x, ]
+  test_data  <- cleaned_count[fold_ids == x, ]
+  
+  mod <- lm(sanit ~ log10(malaria), data = train_data)
+
+  preds <- predict(mod, newdata = test_data)
+
+  r2_val <- var(preds, na.rm = TRUE) / var(test_data$sanit, na.rm = TRUE)
+  
+  return(r2_val)
+})
+```
+
+
+```{r}
+
+cv_results <- tibble(fold = 1:k,
+                     r2   = cv_r2_vec)
+
+cv_results |>
+  mutate(r2 = round(r2, 3)) |>
+  knitr::kable(
+    col.names = c("Fold", "R² (validation)"),
+    digits = 3)
+
+avg_r2 <- mean(cv_results$r2)
+print("Average cross‐validated R² across all folds:")
+round(avg_r2, 4)
+```
+
+## 3.2 Plot the results
+
+```{r}
+
+ggplot(cv_results, aes(x = factor(fold), y = r2)) +
+  geom_point(size = 2, alpha = 0.7) +
+  geom_hline(yintercept = avg_r2, linetype = "dashed", color = "blue") +
+  labs(x     = "Fold Number",
+       y     = expression(R^2~"(validation)"),
+       title = "Distribution of Cross-Validated R² by Fold",
+       subtitle = paste0("Dashed line = average R² across all ", k, " folds (≈ ",
+                      round(avg_r2, 3), ")")) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"),
+        axis.title  = element_text(size = 12))
+
+```
+### 3.2.1 How Predictive Is the Model?
+
+- An average R² of ≈ 0.55 indicates that, on average, roughly 55 % of the variance in rural sanitation percentage can be explained by log-transformed malaria cases.
+- In the context of public-health/infrastructure data, an R² in the range of 0.50–0.60 suggests a **moderate predictive relationship**.  
+  - It is not so low that the model is useless, but it is also not so high that malaria alone fully explains sanitation levels.  
+  - Other covariates (e.g., GDP, education, geography) likely contribute additional explanatory power.
+
+---
+
+### 3.2.2 Variability Between Folds
+
+- Individual fold R² values fluctuate between **0.217 (fold 2)** and **0.792 (fold 6)**.
+- Folds 2 and 9 have relatively low R² (≈ 0.22 and 0.28), whereas folds 6 and 8 achieve comparatively high R² (≈ 0.79 and 0.72).
+- This spread (≈ 0.22 to 0.79) highlights that the model’s performance is somewhat **unstable across different subsets of countries**:
+  - If a fold happens to include countries where the negative malaria–sanitation relationship is strongest, R² is high.
+  - If a fold’s data contain countries with either very high sanitation but low malaria (or vice versa)—for example, outliers or less-typical cases—R² drops.
+
+**Implication:**  
+- The wide variability suggests that the linear model is more predictive for some subgroups of countries than others.  
+- The magnitude of this variability implies we should be cautious about generalizing the model to every country. It may perform very well in some contexts but poorly in others.
+
+---
+
+### 3.2.3 Evidence of Overfitting?
+
+- In cross-validation, each R² reported is on a completely held-out validation fold, so high R² in a fold is **not** due to overfitting on that fold.
+- However, the fact that some folds give much larger R² (> 0.70) than others (< 0.30) could indicate that the model’s structure is capturing **idiosyncratic patterns** in certain subsets of countries:
+  - If those high-R² folds correspond to “easier” subsets (e.g., countries with tightly correlated malaria/sanitation levels), the model might appear stronger than it truly is when looking at global data.
+  - The lower-R² folds could reflect parts of the data where the malaria–sanitation link is weaker or influenced by confounders not in the model.
+- **Overall**, the cross-validation results do **not** directly prove overfitting, but they do show that the model’s explanatory power is **inconsistent** across different data splits.  
+- If we trained on all the data at once, we might obtain a single global R² (≈ 0.395 for the training set), which is actually lower than some fold-specific R² values. In that sense, the model is not overfitting in the classic sense (because the CV R² is not systematically much lower than the training R²); rather, it is capturing a real but **moderately noisy relationship**.
+
+---
+
+### 3.2.4 Conclusions and Recommendations
+
+1. **Moderate Predictive Performance**  
+   - With an average validation R² ≈ 0.55, the model has a **moderate ability** to predict rural sanitation based solely on malaria prevalence.  
+   - A single predictor (log-transformed malaria) can explain about half of the variability, but 45 % of the variance remains unaccounted for.
+
+2. **Data Heterogeneity**  
+   - The wide spread in fold-specific R² (0.22–0.79) suggests that countries do not all follow the same malaria–sanitation pattern.  
+   - Including additional predictors (e.g., urbanization rate, GDP per capita, health spending) could reduce this heterogeneity and stabilize performance.
+
+3. **No Strong Evidence of Overfitting**  
+   - Since R² is computed on out-of-sample folds, high R² values in some folds reflect genuinely strong relationships in those subsets (possibly due to more extreme or homogeneous data).  
+   - Folds with low R² likely contain countries where factors other than sanitation (e.g., climate, health-campaign intensity, vector ecology) play a larger role.
+
+4. **Next Steps**  
+   - Explore whether adding a second or third predictor reduces the variability in cross-validated R² (ideally targeting an average R² above 0.6 with tighter confidence intervals).  
+   - Investigate the characteristics of the low-R² folds:  
+     - Do these folds contain mostly small islands, very high/very low malaria countries, or specific geographic regions?  
+     - This analysis could guide feature engineering or data stratification.
+
+**In summary**, the cross-validation exercise shows that our simple linear model is reasonably predictive on average (≈ 0.55 R²) but exhibits substantial **variability** across different subsets of countries. To improve generalization and reduce fold-to-fold inconsistency, we recommend adding more relevant covariates and/or applying data stratification (e.g., by region or economic class) in future model iterations.
