@@ -31,14 +31,9 @@ We will be exploring the relationship between **access to rural basic sanitation
 
 Our datasets came from the Gapminder database, which combines data from multiple sources into one succint time series for multiple countries. Both of these datasets includes data by country and year, ranging approximately from 1990 to 2006, though coverage varies by country and indicator.
 
-The **access to rural basic sanitation** dataset provides data about the percentage of people living in that country using the most basic sanitation services, that is, improved sanitation facilities not shared with other households. These facilities would include sewer systems, septic tanks, ventilated improved pit latrines, and compositing toilets. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services.
+The **access to rural basic sanitation** dataset provides data about the percentage of people living in that country using the most basic sanitation services, that is, improved sanitation facilities not shared with other households. These facilities would include sewer systems, septic tanks, ventilated improved pit latrines, and compositing toilets. This indicator encompasses both people using basic sanitation services as well as those using safely managed sanitation services. (Gapminder 2022)
 
-The **Malaria Cases per 100,000** dataset provides information about the number of repoted malaria cases per 100,000 people in a country in different years.
-
-Original sources for the data are:
-
--   Sanitation Access: https://data.worldbank.org/indicator/SH.STA.ACSN.RU
--   Malaria Cases: https://www.who.int/tb/en/
+The **Malaria Cases per 100,000** dataset provides information about the number of repoted malaria cases per 100,000 people in a country in different years. (World Bank Data 2022)
 
 ## Hypothesis
 
@@ -367,4 +362,9 @@ ggplot(cv_results, aes(x = factor(fold), y = r2)) +
      - This analysis could guide feature engineering or data stratification.
 
 **In summary**, the cross-validation exercise shows that our simple linear model is reasonably predictive on average (≈ 0.55 R²) but exhibits substantial **variability** across different subsets of countries. To improve generalization and reduce fold-to-fold inconsistency, we recommend adding more relevant covariates and/or applying data stratification (e.g., by region or economic class) in future model iterations.
->>>>>>> refs/remotes/origin/main
+
+## References
+
+“Download the Data.” Gapminder, https://www.gapminder.org/data/. Accessed 5 June 2025.
+
+“World Bank Open Data.” World Bank Open Data, https://data.worldbank.org/indicator/SH.STA.ACSN.RU. Accessed 5 June 2025.
