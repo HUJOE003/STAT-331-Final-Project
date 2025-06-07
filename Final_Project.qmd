@@ -376,3 +376,5 @@ ggplot(cv_results, aes(x = factor(fold), y = r2)) +
 “Download the Data.” Gapminder, https://www.gapminder.org/data/. Accessed 5 June 2025.
 
 “World Bank Open Data.” World Bank Open Data, https://data.worldbank.org/indicator/SH.STA.ACSN.RU. Accessed 5 June 2025.
+
+Shared Github Repository: https://github.com/HUJOE003/STAT-331-Final-Project
