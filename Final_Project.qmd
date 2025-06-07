@@ -80,6 +80,7 @@ cleaned |>
   tail(10)
 ```
 
+## Linear Regression
 ### 2.1 Data Visualization
 
 #### 2.1.1 Relationship Between Variables
@@ -100,7 +101,7 @@ ggplot(aes(x = sanit_avg, y = malaria_avg)) +
     title = "Country-level Sanitation vs. Malaria (2000–2006)"
   )
 ```
-In this plot each point is one country’s 2000–2006 average.  We see a clear downward trend: countries with higher basic sanitation rates tend to have lower malaria incidence.
+In this plot each point is one country’s 2000–2006 average.  We see an estimated downward trend through the regression created: countries with higher basic sanitation rates tend to have lower malaria incidence.
 
 #### 2.1.2 Animation
 Next we use **gganimate** to show how the same relationship shifts year by year:
@@ -123,7 +124,7 @@ cleaned |>
   ease_aes("linear")
 ```
 
-In this animation plot we see that...
+**Inferences**
 - The animation illustrates that from 2000 to 2006, the negative correlation between Malaria cases per 100,000 and rural basic sanitation percentage gradually strengthens.
 
 - Despite potential external influences such as malaria outbreaks and natural events, the log relationship between the two variables remains consistently evident throughout the years.
@@ -155,6 +156,7 @@ cleaned_count |>
        title = "Log-Transformed Linear Relationship: Sanitation vs. Malaria")
 
 ```
+**Log Transformation Summary**
 
 - Looking at the graph of linear regression, we can see that a logarithmic transformation of the rate of malaria cases makes the relationship between sanitation percent and the rate easier to interpret and visualize. By applying the log10 scale transformation to the y-axis, we effectively reduce the skewing caused by countries with very high rates of malaria that otherwise distort the trend.
 
@@ -178,21 +180,20 @@ tidy(lm_clean) |>
   )
 ```
 
-Intercept
+**Intercept**
 
 - When log10(malaria) is 0, that is also when malaria cases per 100,000 = 1; the model predicts the rural basic sanitation rate to be approximately 78.92%.
-
 - It represents the expected sanitation level in countries with extremely low malaria burden.
 
-Coefficient
+**Coefficient**
 
 - For every 1-unit increase in log10(malaria) or for every 10 unit increase in malaria cases per 100,000 people. The model predicts an average decrease of 14.73 percentage points in the rural sanitation rate.
 
-Significance
+**Significance**
 
 - Because the P-value is essentially 0, it shows us that at a 95% significiance level, we are confident that there is a significant relationship between Malaria Cases per 100,000 and Access to rural basic sanitation.
 
-## 2.3 Model Fit
+### 2.3 Model Fit
 
 ```{r}
 y <- cleaned_count$malaria
@@ -213,12 +214,14 @@ fit_tbl <- tibble(
 fit_tbl |>
   knitr::kable(digits = c(NA,4))
 ```
-With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.  
+**R^2 Interpretation**
+
+- With an R^2-value of 0.395, there is a moderate correlation between increases in sanitation and a subsequent decrease in malaria cases per 100,000 people. In other words, 39.5% of the variance in the model is solely explained by sanitation. This suggests that the model has good but not great quality.  
 
 
-## 3.1 Implement k‐fold cross validation
+## Cross Validation
 
-### Explanation of cross validation:
+### 3.1 Cross Validation:
 
 Cross-validation is a technique used to assess how well a predictive model generalizes to an independent dataset. Rather than evaluating the model on a single train/test split, we divide the data into _k_ “folds” and cycle through them so that each fold serves as a validation set exactly once. In this project, we chose the maximum number of folds such that each fold contains at least 10 observations. In practice, our steps were:
 
@@ -290,7 +293,7 @@ print("Average cross‐validated R² across all folds:")
 round(avg_r2, 4)
 ```
 
-## 3.2 Plot the results
+### 3.2 Plot the results
 
 ```{r}
 
@@ -307,7 +310,7 @@ ggplot(cv_results, aes(x = factor(fold), y = r2)) +
         axis.title  = element_text(size = 12))
 
 ```
-### 3.2.1 How Predictive Is the Model?
+#### 3.2.1 How Predictive Is the Model?
 
 - An average R² of ≈ 0.55 indicates that, on average, roughly 55 % of the variance in rural sanitation percentage can be explained by log-transformed malaria cases.
 - In the context of public-health/infrastructure data, an R² in the range of 0.50–0.60 suggests a **moderate predictive relationship**.  
@@ -316,7 +319,7 @@ ggplot(cv_results, aes(x = factor(fold), y = r2)) +
 
 ---
 
-### 3.2.2 Variability Between Folds
+#### 3.2.2 Variability Between Folds
 
 - Individual fold R² values fluctuate between **0.217 (fold 2)** and **0.792 (fold 6)**.
 - Folds 2 and 9 have relatively low R² (≈ 0.22 and 0.28), whereas folds 6 and 8 achieve comparatively high R² (≈ 0.79 and 0.72).
@@ -330,7 +333,7 @@ ggplot(cv_results, aes(x = factor(fold), y = r2)) +
 
 ---
 
-### 3.2.3 Evidence of Overfitting?
+#### 3.2.3 Evidence of Overfitting?
 
 - In cross-validation, each R² reported is on a completely held-out validation fold, so high R² in a fold is **not** due to overfitting on that fold.
 - However, the fact that some folds give much larger R² (> 0.70) than others (< 0.30) could indicate that the model’s structure is capturing **idiosyncratic patterns** in certain subsets of countries:
@@ -341,7 +344,7 @@ ggplot(cv_results, aes(x = factor(fold), y = r2)) +
 
 ---
 
-### 3.2.4 Conclusions and Recommendations
+#### 3.2.4 Conclusions and Recommendations
 
 1. **Moderate Predictive Performance**  
    - With an average validation R² ≈ 0.55, the model has a **moderate ability** to predict rural sanitation based solely on malaria prevalence.  
